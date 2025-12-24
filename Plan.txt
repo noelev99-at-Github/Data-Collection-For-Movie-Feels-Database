@@ -1,0 +1,5 @@
+API for movie information collection,
+web scaping and generating a review based on  the 5 movie reviews scaped, 
+emotions 
+
+#Pip install request

@@ -1,5 +1,8 @@
 import requests
-import sqlalchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, select
+from datetime import datetime
 
 def apimoviecall(title, year=None):
     
@@ -55,6 +58,60 @@ while check != True:
 
 #Store Data in the dataset code here 
 print("Sending data to database")
+
+engine = create_engine(
+    #To be filled later,
+    echo = True
+)
+
+Base = declarative_base()
+
+#Database Model
+class Movie(Base):
+    __tablename__ = "movies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    image_url = Column(Text)
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    moods = relationship("Mood", secondary="movie_moods", back_populates="movies")
+    reviews = relationship("Review", back_populates="movie", cascade="all, delete")
+
+class Mood(Base):
+    __tablename__ = "moods"
+
+    id = Column(Integer, primary_key=True)
+    mood_name = Column(String(255), unique=True, nullable=False)
+
+    movies = relationship("Movie", secondary="movie_moods", back_populates="moods")
+
+class MovieMood(Base):
+    __tablename__ = "movie_moods"
+
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True)
+    mood_id = Column(Integer, ForeignKey("moods.id", ondelete="CASCADE"), primary_key=True)
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"))
+    review = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    movie = relationship("Movie", back_populates="reviews")
+
+# Pydantic models for request validation
+class ReviewCreate(BaseModel):
+    review: str
+
+class MovieRecommendationRequest(BaseModel):
+    moods: list[str]
+    preference: str
+    personalNotes: str
+    timestamp: str
 
 
 #Code that does the web scapping here
